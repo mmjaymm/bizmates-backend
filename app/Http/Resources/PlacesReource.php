@@ -29,7 +29,7 @@ class PlacesReource extends JsonResource
             'related_places' => RelatedPlacesReource::collection($this['related_places']['children'] ?? []),
             'latitude' => $this['geocodes']['main']['latitude'],
             'longitude' => $this['geocodes']['main']['longitude'],
-            'photos' => $this['photos'] ?? [],
+            'photos' => PlacesPhotoResource::collection($this['photos'] ?? []),
             'weather_forecast' => WeatherForecastResource::collection($this['weather_forecast'] ?? []),
         ];
     }

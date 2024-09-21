@@ -29,7 +29,7 @@ class OpenWeatherMap
 
     public function getWeatherForecast($lon, $lat, $options = [])
     {
-        $options = array_merge([
+        $options = array_merge($options, [
             'cnt' => self::DEFAULT_LIMIT
         ]);
 

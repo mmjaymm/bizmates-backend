@@ -24,7 +24,7 @@ class PlacesPhotoResource extends JsonResource
             'created_at'  => $this['created_at'],
             'width'  => $this['width'],
             'height'  => $this['height'],
-            'image'  => $this['prefix'] . $this['suffix']
+            'image'  => $this['prefix'] . 'original' . $this['suffix']
         ];
     }
 }

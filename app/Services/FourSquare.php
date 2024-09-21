@@ -6,6 +6,7 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Arr;
 use App\Interfaces\IApiPlaces;
 use Illuminate\Support\Facades\Http;
+use App\Exceptions\ApiCustomException;
 
 class FourSquare implements IApiPlaces
 {
@@ -29,7 +30,7 @@ class FourSquare implements IApiPlaces
             ]);
     }
 
-    public function getPlaces($place, $categories = null, $limit = 10)
+    public function getPlaces($place, $categories = null, $limit = 5)
     {
 
         $response = $this->client
@@ -39,7 +40,8 @@ class FourSquare implements IApiPlaces
             ]);
 
         if ($response->failed()) {
-            return Arr::add($response->json(), 'status', $response->successful());
+            $errorData = Arr::add($response->json(), 'status', $response->successful());
+            throw new ApiCustomException("Error Processing Request", $errorData);
         }
 
         return $response->json()['results'] ?? [];
@@ -50,7 +52,8 @@ class FourSquare implements IApiPlaces
         $response = $this->client->get($this->baseUri . '/v3/places/' . $id . '/photos');
 
         if ($response->failed()) {
-            return Arr::add($response->json(), 'status', $response->successful());
+            $errorData = Arr::add($response->json(), 'status', $response->successful());
+            throw new ApiCustomException("Error Processing Request", $errorData);
         }
 
         return $response->json() ?? [];

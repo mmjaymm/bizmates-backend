@@ -17,7 +17,9 @@ class RelatedPlacesReource extends JsonResource
         return [
             'id'    => $this['fsq_id'],
             'name'  => $this['name'],
-            'categories' => CategoriesPlacesReource::collection($this['categories'] ?? []),
+            'short_name'  => $this['categories']['short_name'] ?? '',
+            'icon'  => ($this['categories'][0]['icon']['prefix'] . '120' . $this['categories'][0]['icon']['suffix']) ?? '',
+            // 'categories' => CategoriesPlacesReource::collection($this['categories'] ?? []),
         ];
     }
 }

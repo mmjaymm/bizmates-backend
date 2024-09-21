@@ -6,7 +6,9 @@ use App\Services\FourSquare;
 use Illuminate\Http\Request;
 use App\Services\OpenWeatherMap;
 use Illuminate\Support\Collection;
+use App\Interfaces\IPlaceRepository;
 use App\Http\Resources\PlacesReource;
+use App\Exceptions\ApiCustomException;
 use App\Http\Resources\PlacesPhotoResource;
 use App\Http\Resources\WeatherForecastResource;
 
@@ -15,47 +17,77 @@ class PlacesController extends Controller
     const DEFAULT_SEARCH_PLACE = "Japan";
     protected $forsquare;
     protected $openWeather;
+    protected $placeRepository;
 
     public function __construct(
-        FourSquare $forsquare,
-        OpenWeatherMap $openWeather
+        IPlaceRepository $placeRepository
     ) {
-        $this->forsquare = $forsquare;
-        $this->openWeather = $openWeather;
+        $this->placeRepository = $placeRepository;
     }
 
     public function getPlaces(Request $request)
     {
-        $request->mergeIfMissing(['search' => self::DEFAULT_SEARCH_PLACE]);
-        $getPlaces = $this->forsquare->getPlaces($request->search);
+        try {
+            $request->mergeIfMissing(['search' => self::DEFAULT_SEARCH_PLACE]);
+            $getPlaces = $this->placeRepository->getPlaces($request->search);
 
-        return PlacesReource::collection($getPlaces);
+            return PlacesReource::collection($getPlaces);
+        } catch (ApiCustomException $ex) {
+            return response()->json([
+                'error' => $ex->getMessage(),
+                'data' => $ex->getData() ?? null,
+                'status' => false
+            ], 400);
+        } catch (\Exception $ex) {
+            return response()->json([
+                'error' => $ex->getMessage() ?? "Internal Serve Error",
+                'data' => null,
+                'status' => false
+            ], 500);
+        }
     }
 
     public function getPhotoByPlaces($id)
     {
-        $getPhoto = $this->forsquare->getPlacesPhoto($id);
-        return PlacesPhotoResource::collection($getPhoto);
+        try {
+            $getPhoto = $this->placeRepository->placeRepository($id);
+            return PlacesPhotoResource::collection($getPhoto);
+        } catch (ApiCustomException $ex) {
+            return response()->json([
+                'error' => $ex->getMessage(),
+                'data' => $ex->getData() ?? null,
+                'status' => false
+            ], 400);
+        } catch (\Exception $ex) {
+            return response()->json([
+                'error' => $ex->getMessage() ?? "Internal Serve Error",
+                'data' => null,
+                'status' => false
+            ], 500);
+        }
     }
 
     public function getDetails($id)
     {
-        $getDetails = $this->forsquare->getDetails($id);
-        $getPhoto = $this->forsquare->getPlacesPhoto($id);
+        try {
+            $details = $this->placeRepository->getDetails($id);
 
-        $options = [
-            'units' => 'metric'
-        ];
+            $forecast = WeatherForecastResource::collection($details['getWeatherForecast']);
+            $details = new PlacesReource(array_merge($details['getDetails'], ['photos' => $details['getPhoto']], ['weather_forecast' => $forecast]));
 
-        $getWeatherForecast = $this->openWeather->getWeatherForecast(
-            $getDetails['geocodes']['main']['longitude'],
-            $getDetails['geocodes']['main']['latitude'],
-            $options
-        );
-
-        $forecast = WeatherForecastResource::collection($getWeatherForecast);
-        $details = new PlacesReource(array_merge($getDetails, ['photos' => $getPhoto], ['weather_forecast' => $forecast]));
-
-        return $details;
+            return $details;
+        } catch (ApiCustomException $ex) {
+            return response()->json([
+                'error' => $ex->getMessage(),
+                'data' => $ex->getData() ?? null,
+                'status' => false
+            ], 400);
+        } catch (\Exception $ex) {
+            return response()->json([
+                'error' => $ex->getMessage() ?? "Internal Serve Error",
+                'data' => null,
+                'status' => false
+            ], 500);
+        }
     }
 }
